@@ -2,7 +2,10 @@ import click
 import requests
 import os
 import json
+import webbrowser
 from dotenv import load_dotenv
+import base64
+from urllib.parse import urlencode
 
 @click.group()
 def spotags():
@@ -13,20 +16,39 @@ def spotags():
 # @click.option('-a', '--no-auth', is_flag=True, help='Filter out APIs with required auth')
 @spotags.command()
 def login():
-    """List all cataloged APIs."""
+    """Perform authorization"""
     
     load_dotenv()
-    CLIENT_ID = os.getenv('CLIENT_ID')
-    CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-    scope = 'user-read-private user-read-email'
+    client_id = os.getenv('CLIENT_ID')
+    client_secret = os.getenv('CLIENT_SECRET')
+    encoded_credentials = base64.b64encode(client_id.encode() + b':' + client_secret.encode()).decode("utf-8")
+    redirect_uri = "http://localhost:8080/callback"
     params = {
-            "client_id": CLIENT_ID,
+            "client_id": client_id,
             "response_type": "code",
-            "redirect_uri": "http://localhost:8080",
-            "scope": scope
+            "redirect_uri": redirect_uri,
+            "scope": "user-library-read"
             }
 
-    response = requests.get('https://accounts.spotify.com/authorize', allow_redirects=True, params=params
+    webbrowser.open("https://accounts.spotify.com/authorize?" + urlencode(params))
+    
+    code = input('Code: ')
+    
+    token_headers = {
+            "Authorization": "Basic " + encoded_credentials,
+            "Content-Type": "application/x-www-form-urlencoded"
+            }
+    token_data = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": redirect_uri
+            }
+
+    r = requests.post("https://accounts.spotify.com/api/token", data=token_data, headers=token_headers)
+    token = r.json()["access_token"]
+
+@spotags.command()
+def albums
 
 if __name__ == '__main__':
-    spotags()
+    spotags(prog_name='spotags')
