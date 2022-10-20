@@ -13,6 +13,7 @@ from requests.auth import HTTPBasicAuth
 load_dotenv()
 
 home_dir = os.getenv('HOME')
+envfile = f'{home_dir}/.spotag'
 client_id = os.getenv('CLIENT_ID')
 client_secret = os.getenv('CLIENT_SECRET')
 authorization_base_url = "https://accounts.spotify.com/authorize"
@@ -28,7 +29,7 @@ def init():
 
     global token, refresh_token
 
-    if os.path.exists(f'{home_dir}/.spotag'):
+    if os.path.exists(envfile):
         load_tokens()
         headers = {
                 "Content-Type": "application/json",
@@ -51,7 +52,7 @@ def load_tokens():
 
     global token, refresh_token
 
-    load_dotenv(f'{home_dir}/.spotag')
+    load_dotenv(envfile)
     token = os.getenv('SPOTIFY_TOKEN')
     refresh_token = os.getenv('SPOTIFY_REFRESH_TOKEN')
 
@@ -102,7 +103,7 @@ def authorize():
 
 def update_spotag_file():
 
-    with open(f'{home_dir}/.spotag', 'w') as f:
+    with open(envfile, 'w') as f:
         f.write(f'SPOTIFY_TOKEN={token}\n')
         f.write(f'SPOTIFY_REFRESH_TOKEN={refresh_token}\n')
 
