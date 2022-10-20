@@ -6,49 +6,60 @@ import webbrowser
 from dotenv import load_dotenv
 import base64
 from urllib.parse import urlencode
+from requests_oauthlib import OAuth2Session
+from requests.auth import HTTPBasicAuth
+
+
+load_dotenv()
+home_dir = os.getenv('HOME')
+client_id = os.getenv('CLIENT_ID')
+client_secret = os.getenv('CLIENT_SECRET')
+authorization_base_url = "https://accounts.spotify.com/authorize"
+token_url = "https://accounts.spotify.com/api/token"
+api_url = "https://api.spotify.com"
+redirect_uri = "https://localhost:8080/callback"
+scope = "user-library-read"
 
 @click.group()
 def spotags():
     """A CLI that manages Spotify album tags"""
 
-# @click.option('-t', '--title', help='Name of API (matches via substring - i.e. "at" would return "cat" and "atlas".')
-# @click.option('-c', '--category', help='Return only APIs from this category')
 # @click.option('-a', '--no-auth', is_flag=True, help='Filter out APIs with required auth')
 @spotags.command()
 def login():
     """Perform authorization"""
     
-    load_dotenv()
-    client_id = os.getenv('CLIENT_ID')
-    client_secret = os.getenv('CLIENT_SECRET')
-    encoded_credentials = base64.b64encode(client_id.encode() + b':' + client_secret.encode()).decode("utf-8")
-    redirect_uri = "http://localhost:8080/callback"
-    params = {
-            "client_id": client_id,
-            "response_type": "code",
-            "redirect_uri": redirect_uri,
-            "scope": "user-library-read"
-            }
-
-    webbrowser.open("https://accounts.spotify.com/authorize?" + urlencode(params))
+    spotify = OAuth2Session(client_id, scope=scope, redirect_uri=redirect_uri)
+    authorization_url, state = spotify.authorization_url(authorization_base_url)
     
-    code = input('Code: ')
-    
-    token_headers = {
-            "Authorization": "Basic " + encoded_credentials,
-            "Content-Type": "application/x-www-form-urlencoded"
-            }
-    token_data = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": redirect_uri
-            }
+    print('Please go here and authorize: ', authorization_url)
+    redirect_response = input('\n\nPaste the full redirect URL here: ')
 
-    r = requests.post("https://accounts.spotify.com/api/token", data=token_data, headers=token_headers)
-    token = r.json()["access_token"]
+    auth = HTTPBasicAuth(client_id, client_secret)
+
+    token = spotify.fetch_token(token_url, auth=auth, authorization_response=redirect_response)
+    with open(f'{home_dir}/.spotag', 'w') as f:
+        f.write(f'SPOTIFY_TOKEN={token["access_token"]}\n')
+        f.write(f'SPOTIFY_REFRESH_TOKEN={token["refresh_token"]}\n')
+
 
 @spotags.command()
-def albums
+def albums():
+    """List albums"""
+
+    load_dotenv(f'{home_dir}/.spotag')
+    token = os.getenv('SPOTIFY_TOKEN')
+    headers = {
+            "Content-Type": "application/json",
+            "Authorization": f'Bearer {token}'
+            }
+    params = {
+            "limit": 2
+            }
+    r = requests.get(f'{api_url}/v1/me/albums', headers=headers, params=params)
+
+    print(r.text)
+
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')
