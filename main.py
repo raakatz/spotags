@@ -64,7 +64,7 @@ def login():
 
 @spotags.command()
 def pull():
-    """List albums"""
+    """Fetch albums"""
 
     load_tokens()
     
@@ -85,6 +85,17 @@ def pull():
             return False
 
 
+@spotags.command()
+def tags():
+    """List all used tags"""
+
+@spotags.command()
+def tag():
+    """Tag an album"""
+
+@spotags.command()
+def albums():
+    """List albums"""
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')
