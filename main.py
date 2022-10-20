@@ -35,7 +35,7 @@ def spotags():
 @spotags.command()
 def login():
     """Perform authorization"""
-   
+
     global token, refresh_token
     spotify = OAuth2Session(client_id, scope=scope, redirect_uri=redirect_uri)
     auth = HTTPBasicAuth(client_id, client_secret)
@@ -48,26 +48,26 @@ def login():
     def refresh():
         r = spotify.refresh_token(token_url, refresh_token=refresh_token, auth=auth)
         update_spotag_file()
-    
+
     def authorize():
-        authorization_url, state = spotify.authorization_url(authorization_base_url) 
+        authorization_url, state = spotify.authorization_url(authorization_base_url)
         print('Please go here and authorize: ', authorization_url)
         redirect_response = input('\n\nPaste the full redirect URL here: ')
         r = spotify.fetch_token(token_url, auth=auth, authorization_response=redirect_response)
         update_spotag_file()
-    
+
     if os.path.exists(f'{home_dir}/.spotag'):
         refresh()
     else:
         authorize()
-    
+
 
 @spotags.command()
 def pull():
     """Fetch albums"""
 
     load_tokens()
-    
+
     offset = 0
 
     while True:
