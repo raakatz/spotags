@@ -2,7 +2,6 @@ import click
 import requests
 import os
 import json
-import webbrowser
 from dotenv import load_dotenv
 import base64
 from urllib.parse import urlencode
@@ -20,8 +19,27 @@ api_url = "https://api.spotify.com"
 redirect_uri = "https://localhost:8080/callback"
 scope = "user-library-read"
 
-def get_tokens():
+
+def init():
+
     global token, refresh_token
+
+    if os.path.exists(f'{home_dir}/.spotag'):
+        # refresh()
+        print('performing refresh')
+    else:
+        while True:
+            response = input('Would you like to perform authorization? (y/n) ')
+            if response.lower() == 'y':
+                # authorize()
+                print('performing auth')
+                break
+            elif response.lower() == 'n':
+                print('Exiting...')
+                exit(1)
+            else:
+                print('Response not understood, please try again')
+
     load_dotenv(f'{home_dir}/.spotag')
     token = os.getenv('SPOTIFY_TOKEN')
     refresh_token = os.getenv('SPOTIFY_REFRESH_TOKEN')
@@ -42,8 +60,8 @@ def login():
 
     def update_spotag_file():
         with open(f'{home_dir}/.spotag', 'w') as f:
-            f.write(f'SPOTIFY_TOKEN={token["access_token"]}\n')
-            f.write(f'SPOTIFY_REFRESH_TOKEN={token["refresh_token"]}\n')
+            f.write(f'SPOTIFY_TOKEN={token}\n')
+            f.write(f'SPOTIFY_REFRESH_TOKEN={refresh_token}\n')
 
     def refresh():
         r = spotify.refresh_token(token_url, refresh_token=refresh_token, auth=auth)
@@ -56,15 +74,39 @@ def login():
         r = spotify.fetch_token(token_url, auth=auth, authorization_response=redirect_response)
         update_spotag_file()
 
-    if os.path.exists(f'{home_dir}/.spotag'):
-        refresh()
-    else:
-        authorize()
 
 
 @spotags.command()
 def pull():
     """Fetch albums"""
+
+    init()
+
+
+@spotags.command()
+def tags():
+    """List all used tags"""
+
+@spotags.command()
+def tag():
+    """Tag an album"""
+
+@spotags.command()
+def albums():
+    """List albums"""
+
+if __name__ == '__main__':
+    spotags(prog_name='spotags')
+
+
+
+'''
+
+
+
+
+
+
 
     load_tokens()
 
@@ -85,17 +127,7 @@ def pull():
             return False
 
 
-@spotags.command()
-def tags():
-    """List all used tags"""
+def get_tokens():
 
-@spotags.command()
-def tag():
-    """Tag an album"""
 
-@spotags.command()
-def albums():
-    """List albums"""
-
-if __name__ == '__main__':
-    spotags(prog_name='spotags')
+'''
