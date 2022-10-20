@@ -24,29 +24,6 @@ spotify = OAuth2Session(client_id, scope=scope, redirect_uri=redirect_uri)
 auth = HTTPBasicAuth(client_id, client_secret)
 
 
-def load_tokens():
-
-    global token, refresh_token
-
-    load_dotenv(f'{home_dir}/.spotag')
-    token = os.getenv('SPOTIFY_TOKEN')
-    refresh_token = os.getenv('SPOTIFY_REFRESH_TOKEN') 
-
-
-def authorization_request():
-
-    while True:
-        response = input('Would you like to perform authorization? (y/n) ')
-        if response.lower() == 'y':
-            authorize()
-            break
-        elif response.lower() == 'n':
-            print('Exiting...')
-            exit(1)
-        else:
-            print('Response not understood, please try again')
-
-
 def init():
 
     global token, refresh_token
@@ -66,16 +43,31 @@ def init():
                 authorization_request()
             finally:
                 load_tokens()
-
     else:
         authorization_request()
 
 
-def update_spotag_file():
-    
-    with open(f'{home_dir}/.spotag', 'w') as f:            
-        f.write(f'SPOTIFY_TOKEN={token}\n')
-        f.write(f'SPOTIFY_REFRESH_TOKEN={refresh_token}\n')
+def load_tokens():
+
+    global token, refresh_token
+
+    load_dotenv(f'{home_dir}/.spotag')
+    token = os.getenv('SPOTIFY_TOKEN')
+    refresh_token = os.getenv('SPOTIFY_REFRESH_TOKEN')
+
+
+def authorization_request():
+
+    while True:
+        response = input('Would you like to perform authorization? (y/n) ')
+        if response.lower() == 'y':
+            authorize()
+            break
+        elif response.lower() == 'n':
+            print('Exiting...')
+            exit(1)
+        else:
+            print('Response not understood, please try again')
 
 
 def refresh():
@@ -106,6 +98,13 @@ def authorize():
     refresh_token = r["refresh_token"]
     
     update_spotag_file()
+
+
+def update_spotag_file():
+
+    with open(f'{home_dir}/.spotag', 'w') as f:
+        f.write(f'SPOTIFY_TOKEN={token}\n')
+        f.write(f'SPOTIFY_REFRESH_TOKEN={refresh_token}\n')
 
 
 @click.group()
