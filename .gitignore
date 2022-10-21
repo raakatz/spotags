@@ -5,3 +5,4 @@ venv.bak/
 todo.txt
 *.swp
 *.db
+__pycache__/
