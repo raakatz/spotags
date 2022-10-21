@@ -1,4 +1,3 @@
-import db
 import click
 import sqlite3
 import requests
@@ -37,7 +36,7 @@ def init():
                 "Authorization": f'Bearer {token}'
                 }
         r = requests.get(f'{api_url}/me', headers=headers)
-
+        
         if r.status_code >= 400:
             try:
                 refresh()
@@ -119,30 +118,79 @@ def pull():
     """Fetch albums"""
 
     init()
+    
+    offset = 0
+    pulled_albums = list()
 
-    headers = {
-            "Content-Type": "application/json",
-            "Authorization": f'Bearer {token}'
-            }
-    params = {
-            "limit": 1,
-            "offset": 0
-            }
-    r = requests.get(f'{api_url}/me/albums', headers=headers, params=params)
-    print(r.text)
+    while True:
+        headers = {
+                "Content-Type": "application/json",
+                "Authorization": f'Bearer {token}'
+                }
+        params = {
+                "limit": 50,
+                "offset": offset
+                }
+        r = requests.get(f'{api_url}/me/albums', headers=headers, params=params)
+        r = r.json()
 
+        for item in r["items"]:
+            album_name = item["album"]["name"]
+            album_uri = item["album"]["uri"]
+            album_artist = item["album"]["artists"][0]["name"]
+            pulled_albums.append(list((album_uri, album_name, album_artist)))
+            
+        if r["next"] == None:
+            break
+        else:
+            offset += 50
+    
+    """
+    existing_uris = SELECT uri,active FROM albums
+    
+    compare lists, make new_albums, common_albums, orphan_albums
+
+    for album in new_albums,
+        add album to db
+    for album in common_albums,
+        mark active=1
+    for album in orphan_albums,
+        mark active=0
+    """
+
+    """
+    if rows with empty tags,
+    ask to start tagging all active with no tags by running tag()
+    """
+    
 @spotags.command()
 def tags():
     """List all used tags"""
+    
+    """
     db.all_tags()
+    """
+
 @spotags.command()
 def tag():
     """Tag an album"""
+
+    """
+    tag by uri
+    if run without flag, tag all that have empty tags
+    if no --overwrite, only append tags
+    """
 
 @spotags.command()
 def albums():
     """List albums"""
 
+    """
+    SELECT uri,artist,name,tags FROM albums WHEN active=1
+
+    sort by artist
+    --tags
+    """
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')
