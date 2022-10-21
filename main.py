@@ -2,6 +2,7 @@ import click
 import requests
 import json
 from tokens import init
+import db
 
 @click.group()
 def spotags():
@@ -64,9 +65,10 @@ def pull():
 def tags():
     """List all used tags"""
     
-    """
-    db.all_tags()
-    """
+    conn = db.create_connection()
+    tags = db.all_tags(conn)
+    print(tags)
+
 
 @spotags.command()
 def tag():
