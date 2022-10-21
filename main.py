@@ -1,3 +1,4 @@
+import db
 import click
 import sqlite3
 import requests
@@ -133,7 +134,7 @@ def pull():
 @spotags.command()
 def tags():
     """List all used tags"""
-
+    db.all_tags()
 @spotags.command()
 def tag():
     """Tag an album"""
