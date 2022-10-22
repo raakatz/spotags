@@ -61,16 +61,17 @@ def pull():
     for album in pulled_albums:
         if album[0] in uris_new_albums:
             new_albums.append(album)
-        elif album[0] in uris_albums_to_activate:
-            albums_to_activate.append(album)
 
     for uri in uris_albums_to_orphan:
         albums_to_orphan.append(tuple((uri,)))
 
+    for uri in uris_albums_to_activate:
+        albums_to_activate.append(tuple((uri,)))
+
 
     db.update_db(conn, 'insert', new_albums)
-    #db.update_db(conn, 'orphan', albums_to_orphan)
-    #db.update_db(conn, 'activate', albums_to_activate)
+    db.update_db(conn, 'orphan', albums_to_orphan)
+    db.update_db(conn, 'activate', albums_to_activate)
 
     conn.commit()
     conn.close()
@@ -99,17 +100,21 @@ def tag():
     if no --overwrite, only append tags
     """
 
+@click.option("--tags", help="Search by tags, comma-seperated list")
+@click.option("--archived", is_flag=True, help="Show archived")
 @spotags.command()
-def albums():
+def albums(tags, archived):
     """List albums"""
     
     conn = db.create_connection()
-    print(db.get_albums(conn))
-    conn.close()
+    if archived:
+        albums = db.get_albums(conn, True)
+    else:
+        albums = db.get_albums(conn)
+    print(albums)
+    print(len(albums))
 
-    """
-    --tags
-    """
+    conn.close()
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')

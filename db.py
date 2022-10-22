@@ -2,7 +2,7 @@ import sqlite3
 
 db_file = "albums.db"
 
-sql_insert_albums = "INSERT INTO albums(uri,name,artist,active) VALUES(?,?,?,1);"
+sql_select_all = "SELECT uri,artist,name,tags,active FROM albums;" 
 
 sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1;"
 
@@ -18,6 +18,12 @@ sql_albums_table = """ CREATE TABLE IF NOT EXISTS albums (
                                 tags text,
                                 active integer NOT NULL
                             ); """
+
+sql_insert_albums = "INSERT INTO albums(uri,name,artist,active) VALUES(?,?,?,1);"
+
+sql_orphan_albums = "UPDATE albums SET active=0 WHERE uri=?"
+
+sql_activate_albums = "UPDATE albums SET active=1 WHERE uri=?" 
 
 def create_connection():
     conn = sqlite3.connect(db_file)
@@ -50,9 +56,12 @@ def get_uris(conn):
 
     return active_uris, inactive_uris
 
-def get_albums(conn):
+def get_albums(conn, fetch_all=False):
     cur = conn.cursor()
-    albums = cur.execute(sql_select_active)
+    if fetch_all:
+        albums = cur.execute(sql_select_all)
+    else:
+        albums = cur.execute(sql_select_active)
     return albums.fetchall()
 
 def update_db(conn, action, albums_list):
@@ -72,16 +81,3 @@ def update_db(conn, action, albums_list):
     elif action == "activate":
         perform_action(sql_activate_albums)
 
-
-"""
-def orphan_albums(conn, albums_list)
-
-def tag_album():
-
-def prune_album():
-
-def activate_album():
-
-
-def get_album_tags():
-"""
