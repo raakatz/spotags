@@ -75,7 +75,13 @@ def pull():
 
     conn.commit()
     conn.close()
+    
+    print(uris_albums_to_orphan)
+    print(uris_albums_to_activate)
 
+    print(f'{len(new_albums)} new albums were added')
+    print(f'{len(albums_to_orphan)} albums were archived')
+    print(f'{len(albums_to_activate)} were renewed from archive')
     
 @spotags.command()
 def tags():
@@ -92,12 +98,13 @@ def tags():
             print(tag)
 
 
-@click.option('-a', '--album', required=True, type=str)
+@click.option('--empty', is_flag=True)
+@click.option('-a', '--album', type=str)
 @click.option('-t', '--tags', type=str)
 @click.option('--overwrite', is_flag=True)
 @click.option('--delete', is_flag=True)
 @spotags.command()
-def tag(album, tags, overwrite, delete):
+def tag(album, tags, overwrite, delete, empty):
     """Tag an album"""
     
     def overwrite_ask():
@@ -111,13 +118,11 @@ def tag(album, tags, overwrite, delete):
             else:
                 print('Response not understood, please try again')
 
-    album = f'spotify:album:{album}'
-
-    if album and not tags and not delete:
+    if album and not tags and not delete and not empty:
         print('No tags were specified')
         exit(1)
 
-    elif delete and overwrite:
+    elif delete and overwrite and not empty:
         
         overwrite_ask()
 
@@ -128,7 +133,45 @@ def tag(album, tags, overwrite, delete):
         conn.commit()
         conn.close()
 
-        exit(0)
+
+    elif empty:
+
+        conn = db.create_connection()
+
+        albums = db.get_albums(conn, get_empty=True)
+
+        uris_tags_list = list()
+
+        for album in albums:
+            res = input(f'Please enter new tags for {album[2]} - {album[1]} ("exit" to exit)\n')
+            res = res.strip()
+            if res == 'exit':
+                while True:
+                    response = input('Save changes? (y/n) ')
+                    if response.lower() == 'y':
+                        break
+                    elif response.lower() == 'n':
+                        print('Exiting...')
+                        exit(1)
+                    else:
+                        print('Response not understood, please try again')
+                break
+            else:
+                try:
+                    res_list = res.split(',')
+                    new_list = list()
+                    for tag in res_list:
+                        new_list.append(tag.strip())
+                    res = ','.join(new_list)
+                except:
+                    pass
+            
+            uris_tags_list.append(tuple((res, album[0])))
+
+        db.set_tags(conn, uris_tags_list, many=True)
+
+        conn.commit()
+        conn.close()
 
     else:
 
@@ -169,7 +212,6 @@ def tag(album, tags, overwrite, delete):
         
         conn.commit()
         conn.close()
-
 
 @click.option("-t", "--tags", help="Search by tags, comma-seperated list")
 @click.option("--archived", is_flag=True, help="Show archived")

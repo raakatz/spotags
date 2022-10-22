@@ -14,7 +14,7 @@ sql_select_all = "SELECT uri,artist,name,tags,active FROM albums ORDER BY artist
 
 sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1 ORDER BY artist;"
 
-sql_get_tags = "SELECT tags FROM albums WHERE active=1;"
+sql_get_tags = "SELECT tags FROM albums WHERE active=1 ORDER BY artist;"
 
 sql_get_album_tags = "SELECT tags FROM albums WHERE uri=?;"
 
@@ -35,6 +35,8 @@ sql_select_with_wanted_tags = """ SELECT uri,artist,name,tags
                                     WHERE active=1 AND uri in ({0})
                                     ORDER BY artist; """
 
+sql_get_empty_tags = "SELECT uri,name,artist FROM albums WHERE tags IS NULL ORDER BY artist;"
+
 def create_connection():
     conn = sqlite3.connect(db_file)
     cur = conn.cursor()
@@ -43,10 +45,12 @@ def create_connection():
         cur.execute(sql_albums_table)
     return conn
 
-def set_tags(conn, uri_tags):
+def set_tags(conn, uri_tags, many=False):
     cur = conn.cursor()
-    cur.execute(sql_set_tags, uri_tags)
-
+    if many:
+        cur.executemany(sql_set_tags, uri_tags)
+    else:
+        cur.execute(sql_set_tags, uri_tags)
 
 def all_tags(conn, uri=None):
     tags = set()
@@ -81,12 +85,14 @@ def get_uris(conn):
 
     return active_uris, inactive_uris
 
-def get_albums(conn, uris=None, fetch_with_tags=False, fetch_all=False):
+def get_albums(conn, uris=None, fetch_with_tags=False, fetch_all=False, get_empty=False):
     cur = conn.cursor()
     if fetch_with_tags:
         albums = cur.execute(sql_select_with_wanted_tags.format(', '.join('?' for _ in uris)), uris)
     elif fetch_all:
         albums = cur.execute(sql_select_all)
+    elif get_empty:
+        albums = cur.execute(sql_get_empty_tags)
     else:
         albums = cur.execute(sql_select_active)
     return albums.fetchall()
