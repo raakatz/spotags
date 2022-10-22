@@ -91,6 +91,7 @@ def tags():
         for tag in tags:
             print(tag)
 
+
 @click.option('-a', '--album', required=True, type=str)
 @click.option('-t', '--tags', type=str)
 @click.option('--overwrite', is_flag=True)
@@ -99,11 +100,7 @@ def tags():
 def tag(album, tags, overwrite, delete):
     """Tag an album"""
     
-    if album and not tags and not delete:
-        print('No tags were specified')
-        exit(1)
-
-    if delete and overwrite:
+    def overwrite_ask():
         while True:
             response = input('WARNING, overwriting! Continue? (y/n) ')
             if response.lower() == 'y':
@@ -113,6 +110,14 @@ def tag(album, tags, overwrite, delete):
                 exit(1)
             else:
                 print('Response not understood, please try again')
+
+    if album and not tags and not delete:
+        print('No tags were specified')
+        exit(1)
+
+    elif delete and overwrite:
+        
+        overwrite_ask()
 
         conn = db.create_connection()
 
@@ -123,70 +128,98 @@ def tag(album, tags, overwrite, delete):
 
         exit(0)
 
-    tags = tags.strip()
-    tags_set = set()
-    tags_list = list()
-    
-    try:
-        tags_list = tags.split(',')
-        for tag in tags_list:
-            tag = tag.strip()
-            tags_set.add(tag)
-    except:
-        tags_set.add(wanted_tags)
-
-
-    if overwrite:
-
-        while True:
-            response = input('WARNING, overwriting! Continue? (y/n) ')
-            if response.lower() == 'y':
-                break
-            elif response.lower() == 'n':
-                print('Exiting...')
-                exit(1)
-            else:
-                print('Response not understood, please try again')
-
-        conn = db.create_connection()
-
-        final_tags_str = ','.join(tags_set)
-        
-        db.set_tags(conn, tuple((final_tags_str, album)))
-
     else:
-        
-        conn = db.create_connection()
 
-        current_tags_set = db.all_tags(conn, tuple((album,)))
+        tags = tags.strip()
+        tags_set = set()
+        tags_list = list()
         
-        final_tags = tags_set.union(current_tags_set)
-        
-        final_tags_str = ','.join(final_tags)
-        
-        db.set_tags(conn, tuple((final_tags_str, album)))
-    
-    conn.commit()
-    conn.close()
+        try:
+            tags_list = tags.split(',')
+            for tag in tags_list:
+                tag = tag.strip()
+                tags_set.add(tag)
+        except:
+            tags_set.add(wanted_tags)
 
 
-@click.option("--tags", help="Search by tags, comma-seperated list")
+        if overwrite:
+
+            overwrite_ask()
+
+            conn = db.create_connection()
+
+            final_tags_str = ','.join(tags_set)
+            
+            db.set_tags(conn, tuple((final_tags_str, album)))
+
+        else:
+            
+            conn = db.create_connection()
+
+            current_tags_set = db.all_tags(conn, tuple((album,)))
+            
+            final_tags = tags_set.union(current_tags_set)
+            
+            final_tags_str = ','.join(final_tags)
+            
+            db.set_tags(conn, tuple((final_tags_str, album)))
+        
+        conn.commit()
+        conn.close()
+
+
+@click.option("-t", "--tags", help="Search by tags, comma-seperated list")
 @click.option("--archived", is_flag=True, help="Show archived")
 @spotags.command()
 def albums(tags, archived):
     """List albums"""
-   
-    # TODO --tags
+
+    def setify_tags(x):
+
+        tags = x.strip()
+        tags_set = set()
+        tags_list = list()
+        try:
+            tags_list = tags.split(',')
+            for tag in tags_list:
+                tag = tag.strip()
+                tags_set.add(tag)
+        except:
+            tags_set.add(wanted_tags)
+        
+        return tags_set
+
+
     conn = db.create_connection()
+    
     if archived:
-        albums = db.get_albums(conn, True)
+        albums = db.get_albums(conn, fetch_all=True)
+    
+    elif tags != None:
+        
+        uris_with_wanted_tags = list()
+        
+        wanted_tags = setify_tags(tags)
+
+        all_albums = db.get_albums(conn)
+
+        for album in all_albums:
+            if album[3] != None:
+               album_tags = setify_tags(album[3])
+               if wanted_tags.issubset(album_tags):
+                   uris_with_wanted_tags.append(album[0])
+
+        albums = db.get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True) 
+
     else:
         albums = db.get_albums(conn)
 
     conn.close()
-    
+
     for album in albums:
         print(f'{album[0]}\t{album[1]:<50}{album[2]:<50}{album[3]}')
+
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')

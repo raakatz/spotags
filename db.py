@@ -30,6 +30,10 @@ sql_activate_albums = "UPDATE albums SET active=1 WHERE uri=?"
 
 sql_set_tags = "UPDATE albums SET tags=? WHERE uri=?"
 
+sql_select_with_wanted_tags = """ SELECT uri,artist,name,tags
+                                    FROM albums
+                                    WHERE active=1 AND uri in ({0})
+                                    ORDER BY artist; """
 
 def create_connection():
     conn = sqlite3.connect(db_file)
@@ -77,10 +81,12 @@ def get_uris(conn):
 
     return active_uris, inactive_uris
 
-def get_albums(conn, fetch_all=False, tags=None):
+def get_albums(conn, uris=None, fetch_with_tags=False, fetch_all=False):
     cur = conn.cursor()
-    if fetch_all:
-        albums = cur.execute(sql_select_all, tags)
+    if fetch_with_tags:
+        albums = cur.execute(sql_select_with_wanted_tags.format(', '.join('?' for _ in uris)), uris)
+    elif fetch_all:
+        albums = cur.execute(sql_select_all)
     else:
         albums = cur.execute(sql_select_active)
     return albums.fetchall()
