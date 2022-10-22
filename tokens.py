@@ -28,35 +28,24 @@ def init():
     global token, refresh_token
 
     if os.path.exists(envfile):
-        load_tokens()
-        headers = {
-                "Content-Type": "application/json",
-                "Authorization": f'Bearer {token}'
-                }
-        r = requests.get(f'{api_url}/me', headers=headers)
         
-        if r.status_code >= 400:
-            try:
-                refresh()
-            except:
-                authorization_request()
-            finally:
-                load_tokens()
+        load_dotenv(envfile)
+        refresh_token = os.getenv('SPOTIFY_REFRESH_TOKEN')
+        
+        try:
+            refresh()
+        except:
+            authorization_request()
+
     else:
         authorization_request()
     
     return token
 
-def load_tokens():
-
-    global token, refresh_token
-
-    load_dotenv(envfile)
-    token = os.getenv('SPOTIFY_TOKEN')
-    refresh_token = os.getenv('SPOTIFY_REFRESH_TOKEN')
-
 
 def authorization_request():
+
+    global token, refresh_token
 
     while True:
         response = input('Would you like to perform authorization? (y/n) ')
@@ -103,6 +92,5 @@ def authorize():
 def update_spotag_file():
 
     with open(envfile, 'w') as f:
-        f.write(f'SPOTIFY_TOKEN={token}\n')
         f.write(f'SPOTIFY_REFRESH_TOKEN={refresh_token}\n')
 
