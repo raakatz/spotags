@@ -9,7 +9,8 @@ sql_select_all = "SELECT * FROM albums;"
 
 sql_get_tags = "SELECT tags FROM albums WHERE active=1;"
 
-sql_get_uris = "SELECT uri,active FROM albums"
+sql_get_active_uris = "SELECT uri FROM albums WHERE active=1"
+sql_get_inactive_uris = "SELECT uri FROM albums WHERE active=0"
 
 sql_albums_table = """ CREATE TABLE IF NOT EXISTS albums (
                                 uri text PRIMARY KEY,
@@ -35,6 +36,21 @@ def all_tags(conn):
         tags_set = set(tags_list)
         tags = tags.union(tags_set)
     return tags
+
+def get_uris(conn):
+    
+    active_uris = set()
+    inactive_uris = set()
+
+    cur = conn.cursor()
+
+    for uri in cur.execute(sql_get_active_uris):
+        active_uris.add(uri)
+    for uri in cur.execute(sql_get_inactive_uris):
+        inactive_uris.add(uri)
+
+    return active_uris, inactive_uris
+
 """
 def insert_new_albums():
 
