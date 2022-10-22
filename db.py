@@ -59,7 +59,7 @@ def get_uris(conn):
 
     return active_uris, inactive_uris
 
-def get_albums(conn, fetch_all=False):
+def get_albums(conn, fetch_all=False, tags=None):
     cur = conn.cursor()
     if fetch_all:
         albums = cur.execute(sql_select_all)
