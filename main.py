@@ -83,11 +83,13 @@ def tags():
     
     conn = db.create_connection()
     tags = db.all_tags(conn)
+    conn.close()
+
     if len(tags) == 0:
         print('No used tags')
     else:
-        print(tags)
-    conn.close()
+        for tag in tags:
+            print(tag)
 
 @click.option('-a', '--album', required=True, type=str)
 @click.option('-t', '--tags', type=str)
@@ -183,7 +185,8 @@ def albums(tags, archived):
 
     conn.close()
     
-    print(albums)
+    for album in albums:
+        print(f'{album[0]}\t{album[1]:<50}{album[2]:<50}{album[3]}')
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')

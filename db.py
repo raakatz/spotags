@@ -10,11 +10,9 @@ sql_albums_table = """ CREATE TABLE IF NOT EXISTS albums (
                                 active integer NOT NULL
                             ); """
 
-sql_select_all_by_tag = "SELECT uri,artist,name,tags FROM albums WHERE tags=?;"
+sql_select_all = "SELECT uri,artist,name,tags,active FROM albums ORDER BY artist;" 
 
-sql_select_all = "SELECT uri,artist,name,tags,active FROM albums;" 
-
-sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1;"
+sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1 ORDER BY artist;"
 
 sql_get_tags = "SELECT tags FROM albums WHERE active=1;"
 
@@ -48,12 +46,15 @@ def set_tags(conn, uri_tags):
 
 def all_tags(conn, uri=None):
     tags = set()
+    cur = conn.cursor()
+
     if uri != None:
         query = sql_get_album_tags
+        res = cur.execute(query, uri)
     else:
         query = sql_get_tags
-    cur = conn.cursor()
-    for tags_string in cur.execute(query, uri):
+        res = cur.execute(query)
+    for tags_string in res:
         if tags_string[0] == None:
             continue
         else:
