@@ -76,10 +76,6 @@ def pull():
     conn.commit()
     conn.close()
 
-    """
-    if rows with empty tags,
-    ask to start tagging all active with no tags by running tag()
-    """
     
 @spotags.command()
 def tags():
@@ -93,16 +89,84 @@ def tags():
         print(tags)
     conn.close()
 
-
+@click.option('-a', '--album', required=True, type=str)
+@click.option('-t', '--tags', type=str)
+@click.option('--overwrite', is_flag=True)
+@click.option('--delete', is_flag=True)
 @spotags.command()
-def tag():
+def tag(album, tags, overwrite, delete):
     """Tag an album"""
-    # TODO
-    """
-    tag by uri
-    if run without flag, tag all that have empty tags
-    if no --overwrite, only append tags
-    """
+    
+    if album and not tags and not delete:
+        print('No tags were specified')
+        exit(1)
+
+    if delete and overwrite:
+        while True:
+            response = input('WARNING, overwriting! Continue? (y/n) ')
+            if response.lower() == 'y':
+                break
+            elif response.lower() == 'n':
+                print('Exiting...')
+                exit(1)
+            else:
+                print('Response not understood, please try again')
+
+        conn = db.create_connection()
+
+        db.set_tags(conn, tuple((None, album)))
+
+        conn.commit()
+        conn.close()
+
+        exit(0)
+
+    tags = tags.strip()
+    tags_set = set()
+    tags_list = list()
+    
+    try:
+        tags_list = tags.split(',')
+        for tag in tags_list:
+            tag = tag.strip()
+            tags_set.add(tag)
+    except:
+        tags_set.add(wanted_tags)
+
+
+    if overwrite:
+
+        while True:
+            response = input('WARNING, overwriting! Continue? (y/n) ')
+            if response.lower() == 'y':
+                break
+            elif response.lower() == 'n':
+                print('Exiting...')
+                exit(1)
+            else:
+                print('Response not understood, please try again')
+
+        conn = db.create_connection()
+
+        final_tags_str = ','.join(tags_set)
+        
+        db.set_tags(conn, tuple((final_tags_str, album)))
+
+    else:
+        
+        conn = db.create_connection()
+
+        current_tags_set = db.all_tags(conn, tuple((album,)))
+        
+        final_tags = tags_set.union(current_tags_set)
+        
+        final_tags_str = ','.join(final_tags)
+        
+        db.set_tags(conn, tuple((final_tags_str, album)))
+    
+    conn.commit()
+    conn.close()
+
 
 @click.option("--tags", help="Search by tags, comma-seperated list")
 @click.option("--archived", is_flag=True, help="Show archived")
@@ -116,10 +180,10 @@ def albums(tags, archived):
         albums = db.get_albums(conn, True)
     else:
         albums = db.get_albums(conn)
-    print(albums)
-    print(len(albums))
 
     conn.close()
+    
+    print(albums)
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')
