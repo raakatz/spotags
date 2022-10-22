@@ -6,3 +6,4 @@ todo.txt
 *.swp
 *.db
 __pycache__/
+*.bak
