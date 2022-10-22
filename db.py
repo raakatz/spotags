@@ -2,10 +2,9 @@ import sqlite3
 
 db_file = "albums.db"
 
-sql_insert_album = """ INSERT INTO albums(uri,name,artist,active)
-                    VALUES(?,?,?,?); """
+sql_insert_albums = "INSERT INTO albums(uri,name,artist,active) VALUES(?,?,?,1);"
 
-sql_select_all = "SELECT * FROM albums;"
+sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1;"
 
 sql_get_tags = "SELECT tags FROM albums WHERE active=1;"
 
@@ -45,14 +44,37 @@ def get_uris(conn):
     cur = conn.cursor()
 
     for uri in cur.execute(sql_get_active_uris):
-        active_uris.add(uri)
+        active_uris.add(uri[0])
     for uri in cur.execute(sql_get_inactive_uris):
-        inactive_uris.add(uri)
+        inactive_uris.add(uri[0])
 
     return active_uris, inactive_uris
 
+def get_albums(conn):
+    cur = conn.cursor()
+    albums = cur.execute(sql_select_active)
+    return albums.fetchall()
+
+def update_db(conn, action, albums_list):
+    
+    cur = conn.cursor()
+    
+    def perform_action(query):
+        try:
+            cur.executemany(query, albums_list)
+        except Exception as e:
+            print(f'Could not {action} albums: {e}')
+
+    if action == "insert":
+        perform_action(sql_insert_albums)
+    elif action == "orphan":
+        perform_action(sql_orphan_albums)
+    elif action == "activate":
+        perform_action(sql_activate_albums)
+
+
 """
-def insert_new_albums():
+def orphan_albums(conn, albums_list)
 
 def tag_album():
 
@@ -60,7 +82,6 @@ def prune_album():
 
 def activate_album():
 
-def get_albums():
 
 def get_album_tags():
 """

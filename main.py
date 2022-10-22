@@ -18,6 +18,9 @@ def pull():
     offset = 0
     pulled_albums = set()
     pulled_uris = set()
+    new_albums = list()
+    albums_to_orphan = list()
+    albums_to_activate = list()
 
     while True:
         headers = {
@@ -43,40 +46,46 @@ def pull():
             offset += 50
 
     for album in pulled_albums:
-        pulled_uris.append(album[0])
+        pulled_uris.add(album[0])
 
     conn = db.create_connection()
 
     active_uris, inactive_uris = db.get_uris(conn)
     all_existing_uris = active_uris.union(inactive_uris)
-    new_albums = pulled_uris.difference(all_existing_uris)
-
     
+    uris_new_albums = pulled_uris.difference(all_existing_uris)
+    uris_albums_to_orphan = active_uris.difference(pulled_uris)
+    uris_albums_to_activate = inactive_uris.difference(pulled_uris)
+    
+    
+    for album in pulled_albums:
+        if album[0] in uris_new_albums:
+            new_albums.append(album)
+        elif album[0] in uris_albums_to_activate:
+            albums_to_activate.append(album)
 
-    """
-    compare lists, make new_albums, common_albums, orphan_albums
+    for uri in uris_albums_to_orphan:
+        albums_to_orphan.append(tuple((uri,)))
 
-    for album in new_albums,
-        add album to db
-    for album in common_albums,
-        mark active=1
-    for album in orphan_albums,
-        mark active=0
-    """
+
+    db.update_db(conn, 'insert', new_albums)
+    #db.update_db(conn, 'orphan', albums_to_orphan)
+    #db.update_db(conn, 'activate', albums_to_activate)
+
+    conn.commit()
+    conn.close()
 
     """
     if rows with empty tags,
     ask to start tagging all active with no tags by running tag()
     """
-    conn.close()
     
 @spotags.command()
 def tags():
     """List all used tags"""
     
     conn = db.create_connection()
-    tags = db.all_tags(conn)
-    print(tags)
+    print(db.all_tags(conn))
     conn.close()
 
 
@@ -93,11 +102,12 @@ def tag():
 @spotags.command()
 def albums():
     """List albums"""
+    
+    conn = db.create_connection()
+    print(db.get_albums(conn))
+    conn.close()
 
     """
-    SELECT uri,artist,name,tags FROM albums WHEN active=1
-
-    sort by artist
     --tags
     """
 
