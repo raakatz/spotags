@@ -55,8 +55,7 @@ def pull():
     
     uris_new_albums = pulled_uris.difference(all_existing_uris)
     uris_albums_to_orphan = active_uris.difference(pulled_uris)
-    uris_albums_to_activate = inactive_uris.difference(pulled_uris)
-    
+    uris_albums_to_activate = inactive_uris.intersection(pulled_uris)
     
     for album in pulled_albums:
         if album[0] in uris_new_albums:
@@ -76,9 +75,6 @@ def pull():
     conn.commit()
     conn.close()
     
-    print(uris_albums_to_orphan)
-    print(uris_albums_to_activate)
-
     print(f'{len(new_albums)} new albums were added')
     print(f'{len(albums_to_orphan)} albums were archived')
     print(f'{len(albums_to_activate)} were renewed from archive')
