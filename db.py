@@ -37,9 +37,12 @@ def all_tags(conn):
     tags = set()
     cur = conn.cursor()
     for tags_string in cur.execute(sql_get_tags):
-        tags_list = tags_string[0].split(',')
-        tags_set = set(tags_list)
-        tags = tags.union(tags_set)
+        if tags_string[0] == None:
+            continue
+        else:
+            tags_list = tags_string[0].split(',')
+            tags_set = set(tags_list)
+            tags = tags.union(tags_set)
     return tags
 
 def get_uris(conn):

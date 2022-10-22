@@ -86,14 +86,18 @@ def tags():
     """List all used tags"""
     
     conn = db.create_connection()
-    print(db.all_tags(conn))
+    tags = db.all_tags(conn)
+    if len(tags) == 0:
+        print('No used tags')
+    else:
+        print(tags)
     conn.close()
 
 
 @spotags.command()
 def tag():
     """Tag an album"""
-
+    # TODO
     """
     tag by uri
     if run without flag, tag all that have empty tags
@@ -105,7 +109,8 @@ def tag():
 @spotags.command()
 def albums(tags, archived):
     """List albums"""
-    
+   
+    # TODO --tags
     conn = db.create_connection()
     if archived:
         albums = db.get_albums(conn, True)
