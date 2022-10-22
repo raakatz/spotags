@@ -111,6 +111,8 @@ def tag(album, tags, overwrite, delete):
             else:
                 print('Response not understood, please try again')
 
+    album = f'spotify:album:{album}'
+
     if album and not tags and not delete:
         print('No tags were specified')
         exit(1)
