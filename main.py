@@ -150,7 +150,7 @@ def tag(album, tags, overwrite, delete, empty):
 
     else:
 
-        wanted_tags = setfiy_tags(tags)
+        wanted_tags = setify_tags(tags)
 
         if overwrite:
 
@@ -184,27 +184,40 @@ def tag(album, tags, overwrite, delete, empty):
 def albums(tags, archived):
     """List albums"""
 
-    conn = db.create_connection()
-    
-    if archived:
-        albums = db.get_albums(conn, fetch_all=True)
-    
-    elif tags != None:
-        
-        uris_with_wanted_tags = list()
-        
-        wanted_tags = setify_tags(tags)
-
-        all_albums = db.get_albums(conn)
-
+    def get_uris_with_tags(wanted_tags, all_albums):
+        uri_list = list()
         for album in all_albums:
             if album[3] != None:
                album_tags = setify_tags(album[3])
                if wanted_tags.issubset(album_tags):
-                   uris_with_wanted_tags.append(album[0])
+                   uri_list.append(album[0])
+        return uri_list
 
-        albums = db.get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True) 
+    conn = db.create_connection()
+    
+    if tags != None:
+        
+        wanted_tags = setify_tags(tags)
 
+        if archived:
+            
+            all_albums = db.get_albums(conn, fetch_all=True)
+
+            uris_with_wanted_tags = get_uris_with_tags(wanted_tags, all_albums)
+
+            albums = db.get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True, fetch_all=True)
+
+        else:
+
+            all_albums = db.get_albums(conn)
+            
+            uris_with_wanted_tags = get_uris_with_tags(wanted_tags, all_albums)
+
+            albums = db.get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True) 
+
+
+    elif archived:
+        albums = db.get_albums(conn, fetch_all=True)
     else:
         albums = db.get_albums(conn)
 
