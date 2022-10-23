@@ -3,6 +3,8 @@ import requests
 import json
 from tokens import init
 import db
+from helpers import setify_tags, prompt_before_exit
+
 
 @click.group()
 def spotags():
@@ -79,6 +81,7 @@ def pull():
     print(f'{len(albums_to_orphan)} albums were archived')
     print(f'{len(albums_to_activate)} were renewed from archive')
     
+
 @spotags.command()
 def tags():
     """List all used tags"""
@@ -103,24 +106,13 @@ def tags():
 def tag(album, tags, overwrite, delete, empty):
     """Tag an album"""
     
-    def overwrite_ask():
-        while True:
-            response = input('WARNING, overwriting! Continue? (y/n) ')
-            if response.lower() == 'y':
-                break
-            elif response.lower() == 'n':
-                print('Exiting...')
-                exit(1)
-            else:
-                print('Response not understood, please try again')
-
     if album and not tags and not delete and not empty:
         print('No tags were specified')
         exit(1)
 
     elif delete and overwrite and not empty:
         
-        overwrite_ask()
+        prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
 
         conn = db.create_connection()
 
@@ -140,29 +132,16 @@ def tag(album, tags, overwrite, delete, empty):
 
         for album in albums:
             res = input(f'Please enter new tags for {album[2]} - {album[1]} ("exit" to exit)\n')
-            res = res.strip()
-            if res == 'exit':
-                while True:
-                    response = input('Save changes? (y/n) ')
-                    if response.lower() == 'y':
-                        break
-                    elif response.lower() == 'n':
-                        print('Exiting...')
-                        exit(1)
-                    else:
-                        print('Response not understood, please try again')
+            
+            wanted_tags = setify_tags(res)
+
+            if wanted_tags == set(('exit',)):
+                prompt_before_exit('Save changes? (y/n) ')
                 break
             else:
-                try:
-                    res_list = res.split(',')
-                    new_list = list()
-                    for tag in res_list:
-                        new_list.append(tag.strip())
-                    res = ','.join(new_list)
-                except:
-                    pass
+                wanted_tags = ','.join(wanted_tags)
             
-            uris_tags_list.append(tuple((res, album[0])))
+            uris_tags_list.append(tuple((wanted_tags, album[0])))
 
         db.set_tags(conn, uris_tags_list, many=True)
 
@@ -171,26 +150,15 @@ def tag(album, tags, overwrite, delete, empty):
 
     else:
 
-        tags = tags.strip()
-        tags_set = set()
-        tags_list = list()
-        
-        try:
-            tags_list = tags.split(',')
-            for tag in tags_list:
-                tag = tag.strip()
-                tags_set.add(tag)
-        except:
-            tags_set.add(wanted_tags)
-
+        wanted_tags = setfiy_tags(tags)
 
         if overwrite:
 
-            overwrite_ask()
+            prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
 
             conn = db.create_connection()
 
-            final_tags_str = ','.join(tags_set)
+            final_tags_str = ','.join(wanted_tags)
             
             db.set_tags(conn, tuple((final_tags_str, album)))
 
@@ -200,7 +168,7 @@ def tag(album, tags, overwrite, delete, empty):
 
             current_tags_set = db.all_tags(conn, tuple((album,)))
             
-            final_tags = tags_set.union(current_tags_set)
+            final_tags = wanted_tags.union(current_tags_set)
             
             final_tags_str = ','.join(final_tags)
             
@@ -209,27 +177,12 @@ def tag(album, tags, overwrite, delete, empty):
         conn.commit()
         conn.close()
 
+
 @click.option("-t", "--tags", help="Search by tags, comma-seperated list")
 @click.option("--archived", is_flag=True, help="Show archived")
 @spotags.command()
 def albums(tags, archived):
     """List albums"""
-
-    def setify_tags(x):
-
-        tags = x.strip()
-        tags_set = set()
-        tags_list = list()
-        try:
-            tags_list = tags.split(',')
-            for tag in tags_list:
-                tag = tag.strip()
-                tags_set.add(tag)
-        except:
-            tags_set.add(wanted_tags)
-        
-        return tags_set
-
 
     conn = db.create_connection()
     
