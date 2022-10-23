@@ -10,9 +10,6 @@ sql_albums_table = """ CREATE TABLE IF NOT EXISTS albums (
                                 active integer NOT NULL
                             ); """
 
-sql_select_all = "SELECT uri,artist,name,tags,active FROM albums ORDER BY artist;" 
-
-sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1 ORDER BY artist;"
 
 sql_get_tags = "SELECT tags FROM albums WHERE active=1 ORDER BY artist;"
 
@@ -30,7 +27,16 @@ sql_activate_albums = "UPDATE albums SET active=1 WHERE uri=?"
 
 sql_set_tags = "UPDATE albums SET tags=? WHERE uri=?"
 
-sql_select_with_wanted_tags = """ SELECT uri,artist,name,tags
+sql_select_all = "SELECT uri,artist,name,tags FROM albums ORDER BY artist;" 
+
+sql_select_active = "SELECT uri,artist,name,tags FROM albums WHERE active=1 ORDER BY artist;"
+
+sql_select_all_with_wanted_tags = """ SELECT uri,artist,name,tags
+                                    FROM albums
+                                    WHERE uri in ({0})
+                                    ORDER BY artist; """
+
+sql_select_active_with_wanted_tags = """ SELECT uri,artist,name,tags
                                     FROM albums
                                     WHERE active=1 AND uri in ({0})
                                     ORDER BY artist; """
@@ -88,7 +94,10 @@ def get_uris(conn):
 def get_albums(conn, uris=None, fetch_with_tags=False, fetch_all=False, get_empty=False):
     cur = conn.cursor()
     if fetch_with_tags:
-        albums = cur.execute(sql_select_with_wanted_tags.format(', '.join('?' for _ in uris)), uris)
+        if fetch_all:
+            albums = cur.execute(sql_select_all_with_wanted_tags.format(', '.join('?' for _ in uris)), uris)
+        else:
+            albums = cur.execute(sql_select_active_with_wanted_tags.format(', '.join('?' for _ in uris)), uris)
     elif fetch_all:
         albums = cur.execute(sql_select_all)
     elif get_empty:
