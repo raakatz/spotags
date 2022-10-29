@@ -223,9 +223,15 @@ def albums(tags, archived):
 
     conn.close()
 
+    all_fetched_tags = set()
+
     for album in albums:
         print(f'{album[0]}\t{album[1]:<50}{album[2]:<50}{album[3]}')
+        all_fetched_tags = all_fetched_tags.union(setify_tags(album[3]))
 
+    tags_for_further_filter = all_fetched_tags.difference(wanted_tags)
+    
+    print(f'Search can be further filtered with tags: {tags_for_further_filter}')
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')
