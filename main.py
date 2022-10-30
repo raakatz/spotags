@@ -193,6 +193,8 @@ def albums(tags, archived):
                    uri_list.append(album[0])
         return uri_list
 
+    wanted_tags = set()
+
     conn = db.create_connection()
     
     if tags != None:
