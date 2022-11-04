@@ -102,8 +102,9 @@ def tags():
 @click.option('-t', '--tags', type=str)
 @click.option('--overwrite', is_flag=True)
 @click.option('--delete', is_flag=True)
+@click.option('--force', is_flag=True)
 @spotags.command()
-def tag(album, tags, overwrite, delete, empty):
+def tag(album, tags, overwrite, delete, empty, force):
     """Tag an album"""
     
     if album and not tags and not delete and not empty:
@@ -112,7 +113,8 @@ def tag(album, tags, overwrite, delete, empty):
 
     elif delete and overwrite and not empty:
         
-        prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
+        if not force:
+            prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
 
         conn = db.create_connection()
 
@@ -154,7 +156,8 @@ def tag(album, tags, overwrite, delete, empty):
 
         if overwrite:
 
-            prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
+            if not force:
+                prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
 
             conn = db.create_connection()
 
