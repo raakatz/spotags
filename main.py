@@ -97,12 +97,12 @@ def tags():
             print(tag)
 
 
-@click.option('--empty', is_flag=True)
 @click.option('-a', '--album', type=str)
 @click.option('-t', '--tags', type=str)
-@click.option('--overwrite', is_flag=True)
-@click.option('--delete', is_flag=True)
-@click.option('--force', is_flag=True)
+@click.option('-e', '--empty', is_flag=True)
+@click.option('-o', '--overwrite', is_flag=True)
+@click.option('-d', '--delete', is_flag=True)
+@click.option('-f', '--force', is_flag=True)
 @spotags.command()
 def tag(album, tags, overwrite, delete, empty, force):
     """Tag an album"""
