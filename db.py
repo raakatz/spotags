@@ -1,6 +1,12 @@
 import sqlite3
+import os
+from dotenv import load_dotenv
 
-db_file = "albums.db"
+
+load_dotenv()
+
+home_dir = os.getenv('HOME')
+db_file = f'{home_dir}/albums.db'
 
 sql_albums_table = """ CREATE TABLE IF NOT EXISTS albums (
                                 uri text PRIMARY KEY,
