@@ -93,4 +93,3 @@ def update_spotag_file():
 
     with open(envfile, 'w') as f:
         f.write(f'SPOTIFY_REFRESH_TOKEN={refresh_token}\n')
-

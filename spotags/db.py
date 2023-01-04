@@ -128,4 +128,3 @@ def update_db(conn, action, albums_list):
         perform_action(sql_orphan_albums)
     elif action == "activate":
         perform_action(sql_activate_albums)
-

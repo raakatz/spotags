@@ -1,9 +1,9 @@
 import click
 import requests
 import json
-from tokens import init
-import db
-from helpers import setify_tags, prompt_before_exit
+from spotags.tokens import init
+from spotags.db import *
+from spotags.helpers import setify_tags, prompt_before_exit
 
 
 @click.group()
@@ -50,9 +50,9 @@ def pull():
     for album in pulled_albums:
         pulled_uris.add(album[0])
 
-    conn = db.create_connection()
+    conn = create_connection()
 
-    active_uris, inactive_uris = db.get_uris(conn)
+    active_uris, inactive_uris = get_uris(conn)
     all_existing_uris = active_uris.union(inactive_uris)
     
     uris_new_albums = pulled_uris.difference(all_existing_uris)
@@ -70,9 +70,9 @@ def pull():
         albums_to_activate.append(tuple((uri,)))
 
 
-    db.update_db(conn, 'insert', new_albums)
-    db.update_db(conn, 'orphan', albums_to_orphan)
-    db.update_db(conn, 'activate', albums_to_activate)
+    update_db(conn, 'insert', new_albums)
+    update_db(conn, 'orphan', albums_to_orphan)
+    update_db(conn, 'activate', albums_to_activate)
 
     conn.commit()
     conn.close()
@@ -86,8 +86,8 @@ def pull():
 def tags():
     """List all used tags"""
     
-    conn = db.create_connection()
-    tags = db.all_tags(conn)
+    conn = create_connection()
+    tags = all_tags(conn)
     conn.close()
 
     if len(tags) == 0:
@@ -116,9 +116,9 @@ def tag(album, tags, overwrite, delete, empty, force):
         if not force:
             prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
 
-        conn = db.create_connection()
+        conn = create_connection()
 
-        db.set_tags(conn, tuple((None, album)))
+        set_tags(conn, tuple((None, album)))
 
         conn.commit()
         conn.close()
@@ -126,9 +126,9 @@ def tag(album, tags, overwrite, delete, empty, force):
 
     elif empty:
 
-        conn = db.create_connection()
+        conn = create_connection()
 
-        albums = db.get_albums(conn, get_empty=True)
+        albums = get_albums(conn, get_empty=True)
 
         uris_tags_list = list()
 
@@ -145,7 +145,7 @@ def tag(album, tags, overwrite, delete, empty, force):
             
             uris_tags_list.append(tuple((wanted_tags, album[0])))
 
-        db.set_tags(conn, uris_tags_list, many=True)
+        set_tags(conn, uris_tags_list, many=True)
 
         conn.commit()
         conn.close()
@@ -159,23 +159,23 @@ def tag(album, tags, overwrite, delete, empty, force):
             if not force:
                 prompt_before_exit('WARNING, overwriting! Continue? (y/n) ')
 
-            conn = db.create_connection()
+            conn = create_connection()
 
             final_tags_str = ','.join(wanted_tags)
             
-            db.set_tags(conn, tuple((final_tags_str, album)))
+            set_tags(conn, tuple((final_tags_str, album)))
 
         else:
             
-            conn = db.create_connection()
+            conn = create_connection()
 
-            current_tags_set = db.all_tags(conn, tuple((album,)))
+            current_tags_set = all_tags(conn, tuple((album,)))
             
             final_tags = wanted_tags.union(current_tags_set)
             
             final_tags_str = ','.join(final_tags)
             
-            db.set_tags(conn, tuple((final_tags_str, album)))
+            set_tags(conn, tuple((final_tags_str, album)))
         
         conn.commit()
         conn.close()
@@ -198,7 +198,7 @@ def albums(tags, archived):
 
     wanted_tags = set()
 
-    conn = db.create_connection()
+    conn = create_connection()
     
     if tags != None:
         
@@ -206,25 +206,25 @@ def albums(tags, archived):
 
         if archived:
             
-            all_albums = db.get_albums(conn, fetch_all=True)
+            all_albums = get_albums(conn, fetch_all=True)
 
             uris_with_wanted_tags = get_uris_with_tags(wanted_tags, all_albums)
 
-            albums = db.get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True, fetch_all=True)
+            albums = get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True, fetch_all=True)
 
         else:
 
-            all_albums = db.get_albums(conn)
+            all_albums = get_albums(conn)
             
             uris_with_wanted_tags = get_uris_with_tags(wanted_tags, all_albums)
 
-            albums = db.get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True) 
+            albums = get_albums(conn, uris=uris_with_wanted_tags, fetch_with_tags=True) 
 
 
     elif archived:
-        albums = db.get_albums(conn, fetch_all=True)
+        albums = get_albums(conn, fetch_all=True)
     else:
-        albums = db.get_albums(conn)
+        albums = get_albums(conn)
 
     conn.close()
 
@@ -240,5 +240,3 @@ def albums(tags, archived):
 
 if __name__ == '__main__':
     spotags(prog_name='spotags')
-
-
