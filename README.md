@@ -1,6 +1,6 @@
 # spotags
 
-An CLI application that utilizes Spotify's API to sync the albums saved to your library, and manages a local sqlite db to assign tags to them
+A CLI application that utilizes Spotify's API to sync the albums saved to your library, and manages a local sqlite db to assign tags to them
 
 tested on python 3.10.7
 
